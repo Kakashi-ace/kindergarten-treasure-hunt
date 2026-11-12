@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>高青寻宝记•独立寻宝 - 手机拍照直传一体机</title>
+  <link rel="stylesheet" href="css/theme.css?v=20261111_07">
+  <link rel="stylesheet" href="css/mobile.css?v=20261111_07">
+  <script defer src="js/api.js?v=20261111_07"></script>
+  <script defer src="js/mobile.js?v=20261111_07"></script>
+</head>
+<body>
+  <div class="mobile-container">
+    <div class="mobile-header">
+      <div class="mobile-header-avatar">
+        <img src="assets/mascot_boy.png" alt="小高">
+      </div>
+      <div>
+        <h2 style="font-size:18px; font-weight:800;">手机拍照直传一体机</h2>
+        <p style="font-size:12px; opacity:0.9;">拍下幼儿作品纸，一体机大屏即刻智能识别联动</p>
+      </div>
+    </div>
+
+    <div class="mobile-upload-card">
+      <input type="text" id="child-name-input" class="input-name" placeholder="请输入幼儿姓名（选填，留空则自动编号）">
+
+      <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleFileSelect(event)">
+      <input type="file" id="album-input" accept="image/*" multiple style="display:none;" onchange="handleFileSelect(event)">
+
+      <div class="upload-btn-row">
+        <button class="btn-mobile-upload" onclick="document.getElementById('camera-input').click()">
+          <span style="font-size:32px;">📷</span>
+          <span>现场拍照</span>
+        </button>
+        <button class="btn-mobile-upload" onclick="document.getElementById('album-input').click()">
+          <span style="font-size:32px;">🖼️</span>
+          <span>相册批量选图</span>
+        </button>
+      </div>
+
+      <div id="upload-progress-box" style="display:none;">
+        <div style="font-size:13px; font-weight:600; color:#4A5568; margin-bottom:6px;" id="upload-progress-text">正在上传中...</div>
+        <div class="stat-progress-bar">
+          <div id="upload-progress-bar" class="stat-progress-fill" style="width:0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:16px; font-weight:700; color:#2D3748;">📱 本次手机直传记录</h3>
+    </div>
+
+    <div id="mobile-works-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+  </div>
+</body>
+</html>
