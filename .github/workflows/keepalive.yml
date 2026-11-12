@@ -1,0 +1,14 @@
+name: Render 24h KeepAlive
+
+on:
+  schedule:
+    - cron: '*/9 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Service Endpoint
+        run: |
+          curl -s -f -m 15 "https://kindergarten-treasure-hunt.onrender.com/api/info" || true
