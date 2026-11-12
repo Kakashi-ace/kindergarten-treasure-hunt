@@ -9,6 +9,7 @@ jobs:
   keepalive:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Render Service Endpoint
+      - name: Ping Service Endpoints
         run: |
+          curl -s -f -m 15 "https://kids.k78.dpdns.org/api/info" || true
           curl -s -f -m 15 "https://kindergarten-treasure-hunt.onrender.com/api/info" || true
