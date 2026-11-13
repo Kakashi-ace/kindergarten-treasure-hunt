@@ -2,15 +2,13 @@ let currentWorks = [];
 let activeFilter = 'all';
 let selectedCompareIds = [];
 
-const DEFAULT_PRESETS = [
-  ['张子轩 (实拍)', [{ direction: '↑', steps: 2 }, { direction: '←', steps: 3 }]],
-  ['李沐宸', [{ direction: '←', steps: 3 }, { direction: '↑', steps: 2 }]]
-].map((item, idx) => ({
-  id: `work_${String(idx + 1).padStart(2, '0')}`,
-  name: item[0],
-  image_url: `data/presets/child_${String(idx + 1).padStart(2, '0')}.jpg`,
-  steps: item[1]
-}));
+function getPresetsWithSimulation() {
+  if (typeof DEFAULT_PRESETS === 'undefined') return [];
+  return DEFAULT_PRESETS.map(i => ({
+    ...i,
+    simulation: ClientRecognizer.simulatePath(i.steps)
+  }));
+}
 
 function updateAllViews() {
   ComparisonModule.init(currentWorks);
@@ -22,7 +20,7 @@ async function initWorks() {
   if (window.location.protocol.startsWith('http')) {
     try {
       const works = await API.getWorks();
-      if (Array.isArray(works)) {
+      if (Array.isArray(works) && works.length > 0) {
         currentWorks = works;
         updateAllViews();
         API.connectWebSocket((msg) => {
@@ -40,7 +38,18 @@ async function initWorks() {
     } catch (e) {}
   }
   const saved = localStorage.getItem('kg_works_v1');
-  currentWorks = saved ? JSON.parse(saved) : DEFAULT_PRESETS.map(i => ({ ...i, simulation: ClientRecognizer.simulatePath(i.steps) }));
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        currentWorks = parsed;
+        updateAllViews();
+        return;
+      }
+    } catch (e) {}
+  }
+  currentWorks = getPresetsWithSimulation();
+  localStorage.setItem('kg_works_v1', JSON.stringify(currentWorks));
   updateAllViews();
 }
 
@@ -49,9 +58,7 @@ function showToast(msg) {
   toast.textContent = msg;
   toast.style.display = 'flex';
   gsap.fromTo(toast, { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: 'back.out(2)' });
-  setTimeout(() => {
-    gsap.to(toast, { y: -20, opacity: 0, duration: 0.25, onComplete: () => { toast.style.display = 'none'; } });
-  }, 3500);
+  setTimeout(() => gsap.to(toast, { y: -20, opacity: 0, duration: 0.25, onComplete: () => { toast.style.display = 'none'; } }), 3500);
 }
 
 function renderStats() {
@@ -68,19 +75,13 @@ function renderStats() {
 
   const routeCounts = {};
   currentWorks.forEach(w => {
-    const routeKey = w.steps.map(s => `${s.direction}${s.steps}`).join(' ');
-    routeCounts[routeKey] = (routeCounts[routeKey] || 0) + 1;
+    const k = w.steps.map(s => `${s.direction}${s.steps}`).join(' ');
+    routeCounts[k] = (routeCounts[k] || 0) + 1;
   });
-
-  const sortedRoutes = Object.entries(routeCounts).sort((a, b) => b[1] - a[1]);
+  const sorted = Object.entries(routeCounts).sort((a, b) => b[1] - a[1]);
   const tagList = document.getElementById('route-tag-list');
-  if (sortedRoutes.length === 0) {
-    tagList.innerHTML = '<span style="color:#A0AEC0; font-size:12px;">等待作品上传生成统计...</span>';
-  } else {
-    tagList.innerHTML = sortedRoutes.slice(0, 3).map(([key, count]) =>
-      `<span class="route-tag">${key} (${count}人)</span>`
-    ).join('');
-  }
+  tagList.innerHTML = sorted.length === 0 ? '<span style="color:#A0AEC0; font-size:12px;">等待作品上传生成统计...</span>' :
+    sorted.slice(0, 3).map(([k, c]) => `<span class="route-tag">${k} (${c}人)</span>`).join('');
 
   document.getElementById('filter-all-badge').textContent = total;
   document.getElementById('filter-success-badge').textContent = successCount;
@@ -125,15 +126,9 @@ function renderGrid() {
         <div class="child-info"><div class="child-avatar">${work.name.slice(0, 1)}</div><div class="child-name">${work.name}</div></div>
         <span class="badge ${isReached ? 'badge-success' : 'badge-danger'}">${isReached ? '🎉 到达终点' : '🧭 探索中'}</span>
       </div>
-      <div class="thumb-wrap" onclick="openDetailModal('${work.id}')">
-        <img src="${work.image_url}" alt="${work.name}">
-        <div class="thumb-overlay">🔍 点击放大与动态回放</div>
-      </div>
+      <div class="thumb-wrap" onclick="openDetailModal('${work.id}')"><img src="${work.image_url}" alt="${work.name}"><div class="thumb-overlay">🔍 点击放大与动态回放</div></div>
       <div class="steps-strip">${work.steps.map(s => `<span class="step-chip">${s.direction} ${s.steps}</span>`).join('')}</div>
-      <div class="card-footer">
-        <label class="compare-checkbox-label"><input type="checkbox" ${selectedCompareIds.includes(work.id) ? 'checked' : ''} onchange="toggleCompareSelect('${work.id}')"> 对比</label>
-        <button class="btn-outline" style="padding: 4px 12px; font-size: 13px;" onclick="openDetailModal('${work.id}')">大图回放</button>
-      </div>
+      <div class="card-footer"><label class="compare-checkbox-label"><input type="checkbox" ${selectedCompareIds.includes(work.id) ? 'checked' : ''} onchange="toggleCompareSelect('${work.id}')"> 对比</label><button class="btn-outline" style="padding: 4px 12px; font-size: 13px;" onclick="openDetailModal('${work.id}')">大图回放</button></div>
     `;
     grid.appendChild(card);
   });
@@ -205,13 +200,19 @@ async function clearAllWorks() {
 async function resetAllData() {
   if (confirm('确认恢复初始16名幼儿的演示作品样本？')) {
     if (window.location.protocol.startsWith('http')) {
-      await API.resetWorks();
-      currentWorks = await API.getWorks();
+      try {
+        await API.resetWorks();
+        currentWorks = await API.getWorks();
+      } catch (e) {
+        currentWorks = getPresetsWithSimulation();
+      }
     } else {
       localStorage.removeItem('kg_works_v1');
-      initWorks();
+      currentWorks = getPresetsWithSimulation();
+      localStorage.setItem('kg_works_v1', JSON.stringify(currentWorks));
     }
     updateAllViews();
+    showToast('🔄 已成功恢复16名幼儿演示样本！');
   }
 }
 
