@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="css/theme.css?v=20261111_07">
   <link rel="stylesheet" href="css/main.css?v=20261111_07">
   <link rel="stylesheet" href="css/modal.css?v=20261111_07">
+  <script defer src="js/qrcode.min.js"></script>
   <script defer src="js/gsap.min.js?v=20261111_07"></script>
   <script defer src="js/api.js?v=20261111_07"></script>
   <script defer src="js/client-recognizer.js?v=20261111_07"></script>
@@ -201,7 +202,7 @@
         </div>
         <p style="font-size:13px; color:#4A5568;" id="qr-desc-text">手机微信或相机直接扫码，支持 4G/5G 流量与跨网拍照直传</p>
         <div class="qr-img-box">
-          <img id="qr-image" src="" alt="二维码">
+          <div id="qr-code-canvas"></div>
         </div>
         <div class="qr-url-row">
           <span id="qr-url-text" class="qr-url-pill"></span>

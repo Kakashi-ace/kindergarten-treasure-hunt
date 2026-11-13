@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>高青寻宝记•独立寻宝 - 幼儿园作品智能评测</title>
+  <link rel="stylesheet" href="css/theme.css?v=20261111_07">
+  <link rel="stylesheet" href="css/main.css?v=20261111_07">
+  <link rel="stylesheet" href="css/modal.css?v=20261111_07">
+  <script defer src="js/qrcode.min.js"></script>
+  <script defer src="js/gsap.min.js?v=20261111_07"></script>
+  <script defer src="js/api.js?v=20261111_07"></script>
+  <script defer src="js/client-recognizer.js?v=20261111_07"></script>
+  <script defer src="js/map-engine.js?v=20261111_07"></script>
+  <script defer src="js/comparison.js?v=20261111_07"></script>
+  <script defer src="js/modal.js?v=20261111_07"></script>
+  <script defer src="js/app.js?v=20261111_07"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-left">
+        <div class="mascot-avatar-wrap">
+          <img src="assets/mascot_boy.png" alt="小高">
+        </div>
+        <div class="header-title-box">
+          <h1>高青寻宝记•独立寻宝</h1>
+          <p>清华同方一体机专属教学看板 · 手机拍照即拍即传联动 · 空间方位与路径规划智能评测</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-primary" onclick="openQrModal()">
+          <span>📱</span>
+          <span>手机扫码直传</span>
+        </button>
+        <button class="btn-accent" onclick="triggerPcUpload()">
+          <span>💻</span>
+          <span>一体机传图</span>
+        </button>
+        <button class="btn-warning" onclick="startCompareFromSelection()">
+          <span>👥</span>
+          <span>同屏对比教学</span>
+        </button>
+        <button class="btn-danger-outline" onclick="clearAllWorks()">
+          <span>🗑️</span>
+          <span>一键清空作品</span>
+        </button>
+        <button class="btn-outline" onclick="resetAllData()">
+          <span>🔄</span>
+          <span>恢复16人</span>
+        </button>
+        <input type="file" id="pc-file-input" multiple accept="image/*" style="display:none;" onchange="handlePcFileInput(event)">
+      </div>
+    </header>
+
+    <section class="stats-panel">
+      <div class="stat-item">
+        <span class="stat-label">作品总数</span>
+        <div class="stat-num-row">
+          <span id="stat-total" class="stat-num" style="color:var(--text-main);">16</span>
+          <span class="stat-unit">份</span>
+        </div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">成功到达终点</span>
+        <div class="stat-num-row">
+          <span id="stat-success" class="stat-num" style="color:var(--primary);">13</span>
+          <span class="stat-unit">人</span>
+        </div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">待加油 / 偏离</span>
+        <div class="stat-num-row">
+          <span id="stat-fail" class="stat-num" style="color:var(--danger);">3</span>
+          <span class="stat-unit">人</span>
+        </div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">通关达标率</span>
+        <div class="stat-num-row">
+          <span id="stat-rate" class="stat-num" style="color:var(--accent);">81%</span>
+        </div>
+        <div class="stat-progress-bar">
+          <div id="stat-progress" class="stat-progress-fill" style="width:81%;"></div>
+        </div>
+      </div>
+      <div class="route-popular-box">
+        <span class="route-popular-title">🔥 班级热门通关走法</span>
+        <div id="route-tag-list" class="route-tag-list"></div>
+      </div>
+    </section>
+
+    <div class="toolbar-row">
+      <div class="filter-group">
+        <button id="filter-btn-all" class="filter-btn active" onclick="setFilter('all')">全部 (<span id="filter-all-badge">16</span>)</button>
+        <button id="filter-btn-success" class="filter-btn" onclick="setFilter('success')">成功到达 (<span id="filter-success-badge">13</span>)</button>
+        <button id="filter-btn-fail" class="filter-btn" onclick="setFilter('fail')">待加油 (<span id="filter-fail-badge">3</span>)</button>
+      </div>
+      <div id="compare-hint-bar" class="compare-hint-bar" style="display:none;">
+        <span>💡 已选 <strong id="selected-compare-count">0</strong> 份作品</span>
+        <button class="btn-warning" style="padding:4px 12px; font-size:13px;" onclick="startCompareFromSelection()">立即开启对比</button>
+      </div>
+    </div>
+
+    <main id="works-grid" class="works-grid"></main>
+  </div>
+
+  <div id="modal-detail" class="modal-backdrop">
+    <div class="modal-box modal-box-large">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span id="detail-child-name" class="modal-title">作品详情</span>
+          <span id="detail-status-badge" class="badge"></span>
+        </div>
+        <button class="btn-close" onclick="closeDetailModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-split">
+          <div class="detail-left">
+            <div class="detail-img-box">
+              <span class="img-sticker-tag">📷 幼儿纸质原稿实拍</span>
+              <img id="detail-img" src="" alt="原作">
+            </div>
+            <div class="detail-step-editor">
+              <div class="editor-header-row">
+                <span class="editor-title">📝 识别步骤与教师微调</span>
+                <button class="btn-outline" style="padding:4px 10px; font-size:12px; border-radius:10px;" onclick="addStep()">+ 增加一步</button>
+              </div>
+              <div id="step-edit-list" class="step-edit-list"></div>
+            </div>
+          </div>
+          <div class="detail-right">
+            <div class="interactive-map-card">
+              <div class="map-header-row">
+                <span class="map-title">🗺️ 寻宝水车动态航线回放</span>
+                <button class="btn-primary" style="padding:8px 18px; font-size:14px; border-radius:12px;" onclick="playDetailRoute()">🚀 重新出发</button>
+              </div>
+              <div id="detail-map-canvas" class="map-canvas-wrap"></div>
+              <div id="map-summary-strip" class="map-summary-strip"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-compare" class="modal-backdrop">
+    <div class="modal-box modal-box-wide">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-title">👥 双作品同屏对比互动教学</span>
+          <span class="badge badge-info">大屏互动模式</span>
+        </div>
+        <div style="display:flex; gap:14px; align-items:center;">
+          <button id="btn-sync-play" class="btn-warning btn-sync-action" onclick="ComparisonModule.playSync()">🚀 双人同步出发</button>
+          <button class="btn-close" onclick="ComparisonModule.close()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="compare-grid">
+          <div class="compare-col">
+            <div class="compare-header-row">
+              <select id="compare-select-a" class="input-name compare-select"></select>
+              <span id="compare-badge-a" class="badge"></span>
+            </div>
+            <div id="compare-steps-a" class="steps-strip"></div>
+            <div id="compare-map-a" class="map-canvas-wrap"></div>
+          </div>
+          <div class="compare-col">
+            <div class="compare-header-row">
+              <select id="compare-select-b" class="input-name compare-select"></select>
+              <span id="compare-badge-b" class="badge"></span>
+            </div>
+            <div id="compare-steps-b" class="steps-strip"></div>
+            <div id="compare-map-b" class="map-canvas-wrap"></div>
+          </div>
+        </div>
+        <div class="compare-analysis-box">
+          <span style="font-size:24px;">💬</span>
+          <span id="compare-analysis-text"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-qr" class="modal-backdrop">
+    <div class="modal-box" style="max-width:440px;">
+      <div class="modal-header">
+        <span class="modal-title">📱 手机扫码直传</span>
+        <button class="btn-close" onclick="closeQrModal()">×</button>
+      </div>
+      <div class="modal-body qr-modal-content">
+        <div class="qr-mode-tabs">
+          <button id="tab-qr-public" class="qr-tab-btn active" onclick="switchQrMode('public')">🌐 手机公网直连 (推荐)</button>
+          <button id="tab-qr-lan" class="qr-tab-btn" onclick="switchQrMode('lan')">🏠 同Wi-Fi局域网</button>
+        </div>
+        <div class="qr-cloudflare-badge" id="qr-badge-text">
+          <span>☁️ Cloudflare 全球加速服务就绪</span>
+        </div>
+        <p style="font-size:13px; color:#4A5568;" id="qr-desc-text">手机微信或相机直接扫码，支持 4G/5G 流量与跨网拍照直传</p>
+        <div class="qr-img-box">
+          <div id="qr-code-canvas"></div>
+        </div>
+        <div class="qr-url-row">
+          <span id="qr-url-text" class="qr-url-pill"></span>
+          <button class="btn-copy-url" onclick="copyQrUrl()">复制网址</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-notify" class="toast-notify" style="display:none;"></div>
+</body>
+</html>

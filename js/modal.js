@@ -169,7 +169,7 @@ function updateQrDisplay() {
   const badgeEl = document.getElementById('qr-badge-text');
   const descEl = document.getElementById('qr-desc-text');
   const urlEl = document.getElementById('qr-url-text');
-  const imgEl = document.getElementById('qr-image');
+  const container = document.getElementById('qr-code-canvas');
 
   let targetUrl = 'https://kids.k78.dpdns.org/mobile';
   if (isPublic) {
@@ -179,7 +179,6 @@ function updateQrDisplay() {
     badgeEl.innerHTML = '<span>☁️ Cloudflare 全球加速服务就绪</span>';
     badgeEl.style.display = 'inline-flex';
     descEl.textContent = '手机微信或相机直接扫码，支持 4G/5G 流量与跨网拍照直传';
-    imgEl.src = `/api/qr?mode=public&t=${Date.now()}`;
   } else {
     if (currentServerInfo && currentServerInfo.lan_url) {
       targetUrl = currentServerInfo.lan_url;
@@ -188,9 +187,29 @@ function updateQrDisplay() {
     }
     badgeEl.style.display = 'none';
     descEl.textContent = '适合同局域网环境（手机与一体机需连接同一 Wi-Fi）';
-    imgEl.src = `/api/qr?mode=lan&t=${Date.now()}`;
   }
   urlEl.textContent = targetUrl;
+
+  if (container) {
+    container.innerHTML = '';
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(container, {
+        text: targetUrl,
+        width: 200,
+        height: 200,
+        colorDark: '#1A202C',
+        colorLight: '#FFFFFF',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } else {
+      const fallbackImg = document.createElement('img');
+      fallbackImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(targetUrl)}`;
+      fallbackImg.alt = '二维码';
+      fallbackImg.style.width = '200px';
+      fallbackImg.style.height = '200px';
+      container.appendChild(fallbackImg);
+    }
+  }
 }
 
 function copyQrUrl() {

@@ -263,8 +263,11 @@
   border-radius: 18px;
   box-shadow: var(--shadow-md);
   border: 1.5px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.qr-img-box img { width: 100%; height: 100%; }
+.qr-img-box img, .qr-img-box canvas { width: 200px !important; height: 200px !important; border-radius: 6px; }
 .qr-mode-tabs { display: flex; background: #E2E8F0; border-radius: var(--radius-full); padding: 4px; gap: 4px; width: 100%; }
 .qr-tab-btn {
   flex: 1;
