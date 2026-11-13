@@ -11,7 +11,8 @@ function openDetailModal(workId) {
   modal.classList.add('active');
 
   document.getElementById('detail-child-name').textContent = `${currentDetailWork.name} 的作品详情`;
-  document.getElementById('detail-img').src = currentDetailWork.image_url;
+  const dImg = (currentDetailWork.image_url && currentDetailWork.image_url.startsWith('/data/')) ? `https://kids.k78.dpdns.org${currentDetailWork.image_url}` : currentDetailWork.image_url;
+  document.getElementById('detail-img').src = dImg;
 
   const statusBadge = document.getElementById('detail-status-badge');
   const reached = currentDetailWork.simulation.reached;

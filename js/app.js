@@ -17,26 +17,26 @@ function updateAllViews() {
 }
 
 async function initWorks() {
-  if (window.location.protocol.startsWith('http')) {
-    try {
-      const works = await API.getWorks();
-      if (Array.isArray(works) && works.length > 0) {
-        currentWorks = works;
-        updateAllViews();
-        API.connectWebSocket((msg) => {
-          if (msg.type === 'new_work' && msg.work) {
-            currentWorks.unshift(msg.work);
-            updateAllViews();
-            SoundEngine.playSuccess();
-            showToast(`📱 收到手机上传作品：${msg.work.name}！已完成评测`);
-          } else if (msg.type === 'refresh') {
-            API.getWorks().then(w => { currentWorks = w; updateAllViews(); });
-          }
-        });
-        return;
-      }
-    } catch (e) {}
-  }
+  API.connectWebSocket((msg) => {
+    if (msg.type === 'new_work' && msg.work) {
+      currentWorks.unshift(msg.work);
+      updateAllViews();
+      SoundEngine.playSuccess();
+      showToast(`📱 收到手机上传作品：${msg.work.name}！已完成评测`);
+    } else if (msg.type === 'refresh') {
+      API.getWorks().then(w => { currentWorks = w; updateAllViews(); });
+    }
+  });
+
+  try {
+    const works = await API.getWorks();
+    if (Array.isArray(works) && works.length > 0) {
+      currentWorks = works;
+      updateAllViews();
+      return;
+    }
+  } catch (e) {}
+
   const saved = localStorage.getItem('kg_works_v1');
   if (saved) {
     try {
@@ -121,12 +121,13 @@ function renderGrid() {
     card.className = `work-card ${selectedCompareIds.includes(work.id) ? 'selected-for-compare' : ''}`;
     const isReached = work.simulation && work.simulation.reached;
 
+    const imgUrl = (work.image_url && work.image_url.startsWith('/data/')) ? `https://kids.k78.dpdns.org${work.image_url}` : work.image_url;
     card.innerHTML = `
       <div class="card-top">
         <div class="child-info"><div class="child-avatar">${work.name.slice(0, 1)}</div><div class="child-name">${work.name}</div></div>
         <span class="badge ${isReached ? 'badge-success' : 'badge-danger'}">${isReached ? '🎉 到达终点' : '🧭 探索中'}</span>
       </div>
-      <div class="thumb-wrap" onclick="openDetailModal('${work.id}')"><img src="${work.image_url}" alt="${work.name}"><div class="thumb-overlay">🔍 点击放大与动态回放</div></div>
+      <div class="thumb-wrap" onclick="openDetailModal('${work.id}')"><img src="${imgUrl}" alt="${work.name}"><div class="thumb-overlay">🔍 点击放大与动态回放</div></div>
       <div class="steps-strip">${work.steps.map(s => `<span class="step-chip">${s.direction} ${s.steps}</span>`).join('')}</div>
       <div class="card-footer"><label class="compare-checkbox-label"><input type="checkbox" ${selectedCompareIds.includes(work.id) ? 'checked' : ''} onchange="toggleCompareSelect('${work.id}')"> 对比</label><button class="btn-outline" style="padding: 4px 12px; font-size: 13px;" onclick="openDetailModal('${work.id}')">大图回放</button></div>
     `;
